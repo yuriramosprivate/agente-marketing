@@ -1,0 +1,42 @@
+[
+  {
+    "pacote": "Tráfego Black Friday",
+    "categoria": "trafego",
+    "descricao": "Campanhas Meta Ads + Google Ads focadas em Black Friday com setup, gestão e relatório semanal",
+    "inclui": "criação de criativos, segmentação, otimização e relatório",
+    "preco": 1000,
+    "tipo": "mensal",
+    "disponivel": true,
+    "destaque": true
+  },
+  {
+    "pacote": "Combo Completo Black Friday",
+    "categoria": "combo",
+    "descricao": "Tráfego pago + gestão de redes sociais + landing page exclusiva para Black Friday",
+    "inclui": "Meta Ads + Google Ads + 12 posts + 2 Reels + landing page de conversão",
+    "preco": 1500,
+    "tipo": "mensal",
+    "disponivel": true,
+    "destaque": true
+  },
+  {
+    "pacote": "Gestão de Redes Sociais",
+    "categoria": "redes",
+    "descricao": "Criação e publicação de conteúdo no Instagram e Facebook, incluindo Black Friday",
+    "inclui": "12 posts/mês + 2 Reels + stories temáticos",
+    "preco": 800,
+    "tipo": "mensal",
+    "disponivel": true,
+    "destaque": false
+  },
+  {
+    "pacote": "Landing Page Black Friday",
+    "categoria": "site",
+    "descricao": "Página de vendas focada em conversão para Black Friday, com integração WhatsApp e formulário",
+    "inclui": "design + desenvolvimento + configuração de formulário + integração WhatsApp",
+    "preco": 1200,
+    "tipo": "unico",
+    "disponivel": true,
+    "destaque": false
+  }
+]
