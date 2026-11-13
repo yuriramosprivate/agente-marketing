@@ -1,6 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import express from "express";
-import { assertUazapi, config } from "./config";
+import { config } from "./config";
 import {
   desfazerTurno,
   limparSessoesOciosas,
@@ -237,9 +237,12 @@ app.post("/webhook", (req, res) => {
 // Boot
 // ---------------------------------------------------------------------------
 
-// O servidor recebe webhook e responde no WhatsApp: sem credencial ele nao serve
-// pra nada. Falha aqui, no boot, em vez de no primeiro lead.
-assertUazapi();
+if (!config.uazapiUrl || !config.uazapiToken) {
+  console.warn(
+    "[boot] UAZAPI_URL/TOKEN nao configurados -- o agente iniciou mas nao enviara WhatsApp. " +
+      "Preencha as variaveis e redeploy."
+  );
+}
 
 if (!config.webhookSecret) {
   console.warn(
