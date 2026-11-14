@@ -200,7 +200,12 @@ app.post("/webhook", (req, res) => {
       return;
     }
 
-    if (msg.isGroup === true) return; // grupos nao sao pre-atendimento
+    if (msg.isGroup === true) {
+      if (!config.leadsGroupJid) {
+        console.log(`[grupo] JID: ${msg.chatid ?? "?"} | instancia: ${body.instanceName ?? "?"} -- cole em LEADS_GROUP_JID`);
+      }
+      return;
+    }
 
     const chatid = msg.chatid?.trim();
     if (!chatid) return;

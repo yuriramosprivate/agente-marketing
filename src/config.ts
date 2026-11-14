@@ -90,16 +90,21 @@ export const config = {
   webhookSecret: opt("WEBHOOK_SECRET", ""),
 
   // --- entrega do lead ---
-  /**
-   * WhatsApp de quem recebe o lead pronto (ex: 5513999998888).
-   * Vazio = nao notifica ninguem.
-   */
   humanoWhatsapp: opt("HUMANO_WHATSAPP", ""),
-  /**
-   * POST do lead em JSON. Aponta para n8n, Make, Zapier, Trello ou o CRM que o
-   * negocio ja usa -- o encaixe e nao substituir a ferramenta dele. Vazio = desligado.
-   */
   leadWebhookUrl: opt("LEAD_WEBHOOK_URL", ""),
+
+  // --- Google Calendar ---
+  googleClientId: opt("GOOGLE_CLIENT_ID", ""),
+  googleClientSecret: opt("GOOGLE_CLIENT_SECRET", ""),
+  googleRefreshToken: opt("GOOGLE_REFRESH_TOKEN", ""),
+  /** ID do calendário = e-mail do dono. */
+  googleCalendarId: opt("GOOGLE_CALENDAR_ID", ""),
+
+  // --- Grupo WhatsApp de leads ---
+  /** JID do grupo (ex: 120363...@g.us). Vazio = nao envia pro grupo. */
+  leadsGroupJid: opt("LEADS_GROUP_JID", ""),
+  /** Numero que recebe @mencao no grupo (ex: 5547992289343). */
+  amorWhatsapp: opt("AMOR_WHATSAPP", "5547992289343"),
 
   // --- handoff ---
   /** Silencia o agente depois de registrar o lead: o humano assumiu. */

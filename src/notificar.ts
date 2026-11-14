@@ -1,5 +1,6 @@
 import { config } from "./config";
 import { enviarTexto } from "./whatsapp";
+import type { Lead } from "./tools";
 
 /**
  * Entrega do lead pronto. Dois destinos, ambos opcionais e independentes.
@@ -48,10 +49,6 @@ async function dispararWebhook(lead: Record<string, unknown>, chatid: string): P
 
 /**
  * Dispara as notificacoes sem bloquear a resposta ao cliente.
- *
- * O cliente nao pode esperar o Trello responder para receber "ja passei pra
- * equipe" -- por isso isto e fire-and-forget, com cada destino isolado do
- * outro: webhook fora do ar nao impede o WhatsApp de tocar.
  */
 export function notificarLead(
   lead: Record<string, unknown>,
@@ -64,4 +61,54 @@ export function notificarLead(
   void dispararWebhook(lead, chatid).catch((e) =>
     console.warn("[notificar] webhook falhou (ignorado):", e instanceof Error ? e.message : e)
   );
+}
+
+/**
+ * Envia o resumo do lead para o grupo de prospecção no WhatsApp.
+ * Menciona @amor❤️ para alertar quem cuida dos leads.
+ *
+ * Best-effort: falha aqui nao afeta o atendimento.
+ */
+export function notificarGrupoLeads(lead: Lead, telefoneCliente: string): void {
+  if (!config.leadsGroupJid || !config.uazapiUrl || !config.uazapiToken) return;
+
+  const linhas = [
+    "🎯 *Novo lead prospectado!*",
+    "",
+    `👤 *Cliente:* ${lead.nome}`,
+    `📱 *WhatsApp:* ${telefoneCliente}`,
+    lead.emailLead ? `📧 *E-mail:* ${lead.emailLead}` : "",
+    `🏢 *Segmento:* ${lead.segmento}`,
+    lead.temSite ? "🌐 *Site:* tem site" : "🌐 *Site:* ❌ sem site",
+    `📱 *Redes:* ${lead.redesSociais}`,
+    `💰 *Orçamento:* ${lead.orcamentoMensal}`,
+    lead.melhorHorario !== "nao agendado"
+      ? `📅 *Horário:* ${lead.melhorHorario}`
+      : "",
+    "",
+    `@${config.amorWhatsapp} 👀`,
+  ].filter((l) => l !== "");
+
+  const texto = linhas.join("\n");
+  const mentions = config.amorWhatsapp ? [`${config.amorWhatsapp}@s.whatsapp.net`] : [];
+
+  void fetch(`${config.uazapiUrl}/send/text`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      token: config.uazapiToken,
+    },
+    body: JSON.stringify({
+      chatid: config.leadsGroupJid,
+      text: texto,
+      mentions,
+    }),
+  })
+    .then((r) => {
+      if (!r.ok) console.warn(`[notificar] grupo ${r.status} (ignorado)`);
+      else console.log("[notificar] grupo de leads notificado");
+    })
+    .catch((e) =>
+      console.warn("[notificar] grupo falhou (ignorado):", e instanceof Error ? e.message : e)
+    );
 }

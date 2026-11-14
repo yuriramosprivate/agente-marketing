@@ -1,6 +1,7 @@
 import type { FunctionDeclaration } from "@google/genai";
 import { config } from "./config";
-import { notificarLead } from "./notificar";
+import { notificarLead, notificarGrupoLeads } from "./notificar";
+import { agendarNoCalendar } from "./calendar";
 import { pausar } from "./pausa";
 import {
   guardarLead,
@@ -161,6 +162,9 @@ export type Lead = {
   redesSociais: string;
   orcamentoMensal: string;
   melhorHorario: string;
+  emailLead: string;
+  /** ISO 8601 calculado pelo modelo a partir da data de hoje. Ex: "2026-11-20T09:00:00" */
+  horarioIso: string;
 };
 
 /** O texto que chega no WhatsApp de quem vai atender. */
@@ -170,6 +174,7 @@ function formatarParaHumano(lead: Lead, telefoneCliente: string): string {
     "",
     `Cliente: ${lead.nome}`,
     `WhatsApp: ${telefoneCliente}`,
+    lead.emailLead ? `E-mail: ${lead.emailLead}` : "",
     `Segmento: ${lead.segmento}`,
     lead.temSite ? "Site: tem site" : "Site: ❌ sem site (oportunidade!)",
     `Redes sociais: ${lead.redesSociais}`,
@@ -177,7 +182,7 @@ function formatarParaHumano(lead: Lead, telefoneCliente: string): string {
     `Melhor horário: ${lead.melhorHorario}`,
     "",
     "Pode assumir a conversa.",
-  ];
+  ].filter((l) => l !== "");
   return linhas.join("\n");
 }
 
@@ -188,6 +193,9 @@ function registrarLead(args: Record<string, unknown>, chatid: string) {
     typeof args.temSite === "boolean"
       ? args.temSite
       : anterior?.temSite ?? false;
+
+  const emailLead = preferir(String(args.emailLead ?? ""), anterior?.emailLead, "");
+  const horarioIso = preferir(String(args.horarioIso ?? ""), anterior?.horarioIso, "");
 
   const lead: Lead = {
     nome: preferir(String(args.nome ?? ""), anterior?.nome, "nao informado"),
@@ -208,6 +216,8 @@ function registrarLead(args: Record<string, unknown>, chatid: string) {
       anterior?.melhorHorario,
       "nao agendado"
     ),
+    emailLead,
+    horarioIso,
   };
 
   guardarLead(chatid, lead);
@@ -221,6 +231,21 @@ function registrarLead(args: Record<string, unknown>, chatid: string) {
 
   const telefone = chatid.split("@")[0] ?? chatid;
   notificarLead(lead, formatarParaHumano(lead, telefone), chatid);
+  notificarGrupoLeads(lead, telefone);
+
+  if (emailLead && horarioIso) {
+    void agendarNoCalendar({
+      tituloReuniao: `Call Lumina MKT × ${lead.nome}`,
+      horarioIso,
+      emailLead,
+      nomeContato: lead.nome,
+      resumo:
+        `Segmento: ${lead.segmento} | Orçamento: ${lead.orcamentoMensal}\n` +
+        `WhatsApp: ${telefone}`,
+    }).catch((e) =>
+      console.warn("[calendar] falha ao agendar (ignorado):", e instanceof Error ? e.message : e)
+    );
+  }
 
   if (config.pausarAposLead) {
     pausar(chatid, config.pausaAposLeadMin * 60_000, "lead registrado, humano assumiu");
@@ -309,6 +334,16 @@ export const declaracoes: FunctionDeclaration[] = [
           type: "string",
           description:
             "Dia e horário para a reunião que o CLIENTE confirmou. Ex: 'quinta à tarde', 'sexta-feira 28/11, manhã'. Omita se ele recusou ou não respondeu.",
+        },
+        emailLead: {
+          type: "string",
+          description:
+            "E-mail do lead para enviar o convite da call. Peça APENAS depois que ele confirmar o horário. Ex: 'joao@empresa.com'. Omita se não forneceu.",
+        },
+        horarioIso: {
+          type: "string",
+          description:
+            "ISO 8601 do horário confirmado, calculado a partir da data de hoje (disponível no system prompt). 'manhã' = 09:00, 'tarde' = 14:00, 'noite' = 19:00. Ex: '2026-11-20T09:00:00'. Omita se o horário não foi confirmado.",
         },
       },
       required: ["nome", "segmento", "temSite", "redesSociais", "orcamentoMensal"],
